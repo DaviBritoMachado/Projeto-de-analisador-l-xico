@@ -121,7 +121,7 @@ struct token next_token(){
                 column = 0;
                 line++;
             } else{
-                printf("ERRO NA LINHA %i E COLUNA %i\n", line, column);
+				state 8;
             }
             break;
         case 1:
@@ -205,7 +205,10 @@ struct token next_token(){
         case 7:
             return assign_type(BRACKETS);
         case 8:
-            
+			collumn--;
+			state = 0;
+            printf("ERRO NA LINHA %i E COLUNA %i\n", line, column);
+			break;
         }
     }
 }
@@ -266,7 +269,8 @@ bool is_end_comment(char c) {
 }
 
 int verify_reserd_word(){
-    for(int x = 0; x < sizeof(reserved_words);x++){
+	int x = 0;
+    for(x = 0; x < sizeof(reserved_words);x++){
         if(strcmp(token_content, reserved_words[x]) == 0){
             return RESERVED_WORD;
         }
