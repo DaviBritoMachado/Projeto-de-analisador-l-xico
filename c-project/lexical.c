@@ -77,16 +77,15 @@ void create_reserver_list(){
 char token_content[50];
 int line = 1;
 int column = 0;
+struct token nul;
 
 struct token next_token(){
     char current_char;
     int state = 0;
     int posi = 0;
-    int v = 0;
 
     while(true){
         if(isEoF()){
-            struct token nul;
             nul.type = NULO;
             return nul;
         }
@@ -104,6 +103,9 @@ struct token next_token(){
             } else if(is_digit(current_char)) {
                 token_content[posi] = current_char;
 				state = 2;
+            } else if(is_point(current_char)) {
+                token_content[posi] = current_char;
+				state = 3;
             } else if(isRelOperator(current_char)) {
                 token_content[posi] = current_char;
 				state = 4;
@@ -116,25 +118,21 @@ struct token next_token(){
             } else if(is_brackets(current_char)) {
                 token_content[posi] = current_char;
                 state = 7;
-            } else if(current_char == ' '){    
             } else if(isEoL(current_char)){
                 column = 0;
                 line++;
+            } else if(is_space(current_char)){
             } else{
-				state 8;
+				state = 8;
             }
             break;
         case 1:
-            if(is_letter(current_char) || is_digit(current_char)) {
+            if(is_letter(current_char) || is_digit(current_char) || is_underline(current_char)) {
                 posi += 1;
 				token_content[posi] = current_char;
 			} else {
-                v = verify_reserd_word();
-                if(v != 0){
-                    return assign_type(v); /*RESERVED_WORD*/
-                }
-				return assign_type(IDENTIFIER);
-			}
+                return is_error(current_char, IDENTIFIER);
+            }
             break;
         case 2:
             if(is_digit(current_char)) {
@@ -144,16 +142,16 @@ struct token next_token(){
                 posi += 1;
                 token_content[posi] = current_char;
 				state = 3;
-            } else{
-                return assign_type(NUMBER);
+            } else {
+                return is_error(current_char, NUMBER);
             }
             break;
         case 3:
             if(is_digit(current_char)) {
                 posi += 1;
                 token_content[posi] = current_char;
-            } else{
-                return assign_type(NUMBER);
+            } else {
+                return is_error(current_char, NUMBER);
             }
             break;
         case 4:
@@ -174,6 +172,7 @@ struct token next_token(){
                         return nul;
                     }
                 }
+                column = 0;
                 line++;
                 state = 0;
                 break;
@@ -181,8 +180,10 @@ struct token next_token(){
                 while(!is_end_comment(current_char)){
                     if(isEoL(current_char)){
                         line++;
+                        column = 0;
                     }
                     current_char = next_node();
+                    column++;
                     if(isEoF()){
                         struct token nul;
                         nul.type = NULO;
@@ -203,14 +204,19 @@ struct token next_token(){
             }
             return assign_type(ASSIGNMENT);
         case 7:
-            return assign_type(BRACKETS);
+            return assign_type(BRACKETS);   
         case 8:
-			collumn--;
+			column--;
 			state = 0;
-            printf("ERRO NA LINHA %i E COLUNA %i\n", line, column);
+            error();
+            return(nul);
 			break;
         }
     }
+}
+
+bool is_space(char c) {
+    return c == ' ';
 }
 
 bool is_letter(char c) {
@@ -219,6 +225,10 @@ bool is_letter(char c) {
 	
 bool is_digit(char c) {
 	return c >= '0' && c <= '9';
+}
+
+bool is_underline(char c) {
+    return c == '_';
 }
 
 bool is_point(char c) {
@@ -320,6 +330,32 @@ int verify_type(int i){
     
     default:
         break;
+    }
+}
+
+void error() {
+    printf("ERRO NA LINHA %i E COLUNA %i\n", line, column);
+}
+
+struct token is_error(char c, int i) {
+    if(is_space(c) || isEoL(c) || is_brackets(c) || isEoF()) {
+        int v = verify_reserd_word();
+        if(v != 0){
+            return assign_type(v); /*RESERVED_WORD*/
+        }
+        return assign_type(i);
+    } else {
+    last_node();
+    do {
+        actual_node;
+        next_node();
+    } while(!is_space(actual_node -> file_char) && !isEoL(actual_node -> file_char) && !isEoF());
+    memset(token_content, '\0', sizeof(token_content));
+    error();
+    if(isEoL(actual_node -> file_char)){
+        column = 0;
+    }
+    return nul;
     }
 }
 
